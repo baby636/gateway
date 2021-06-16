@@ -15,20 +15,23 @@ pub enum MaxAmount {
     Max,
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Chain {
     Eth,
+    Matic,
 }
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Asset {
     Cash,
     Eth([u8; 20]),
+    Matic([u8; 20]),
 }
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Account {
     Eth([u8; 20]),
+    Matic([u8; 20]),
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -69,33 +72,36 @@ fn parse_max_amount<'a>(t: &Token) -> Result<MaxAmount, ParseError<'a>> {
 fn parse_chain<'a>(chain: &'a str) -> Result<Chain, ParseError<'a>> {
     match chain {
         "Eth" => Ok(Chain::Eth),
+        "Matic" => Ok(Chain::Matic),
         _ => Err(ParseError::InvalidChain(chain)),
     }
 }
 
-fn parse_eth_address<'a>(account: &'a str) -> Result<[u8; 20], ParseError<'a>> {
-    if &account[0..2] != "0x" {
-        Err(ParseError::InvalidChainAccount(Chain::Eth))?;
+fn parse_eth_address<'a>(account: &'a str, chain: Chain) -> Result<[u8; 20], ParseError<'a>> {
+    if !account.starts_with("0x") {
+        Err(ParseError::InvalidChainAccount(chain))?;
     }
 
     let account_vec: Vec<u8> =
-        hex::decode(&account[2..]).map_err(|_| ParseError::InvalidChainAccount(Chain::Eth))?;
+        hex::decode(&account[2..]).map_err(|_| ParseError::InvalidChainAccount(chain))?;
     let chain_account: [u8; 20] = account_vec
         .try_into()
-        .map_err(|_| ParseError::InvalidChainAccount(Chain::Eth))?;
+        .map_err(|_| ParseError::InvalidChainAccount(chain))?;
 
     Ok(chain_account)
 }
 
 fn parse_chain_account<'a>(chain: Chain, address: &'a str) -> Result<Account, ParseError<'a>> {
     match chain {
-        Chain::Eth => Ok(Account::Eth(parse_eth_address(address)?)),
+        Chain::Eth => Ok(Account::Eth(parse_eth_address(address, Chain::Eth)?)),
+        Chain::Matic => Ok(Account::Matic(parse_eth_address(address, Chain::Matic)?)),
     }
 }
 
 fn parse_chain_asset<'a>(chain: Chain, address: &'a str) -> Result<Asset, ParseError<'a>> {
     match chain {
-        Chain::Eth => Ok(Asset::Eth(parse_eth_address(address)?)),
+        Chain::Eth => Ok(Asset::Eth(parse_eth_address(address, Chain::Eth)?)),
+        Chain::Matic => Ok(Asset::Matic(parse_eth_address(address, Chain::Matic)?)),
     }
 }
 

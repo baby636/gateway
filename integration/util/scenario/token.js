@@ -26,11 +26,13 @@ class Token {
   }
 
   toTrxArg() {
-    return `Eth:${this.ethAddress()}`;
+    return `${this.chain().nameAsPascalCase()}:${this.ethAddress()}`;
   }
 
   toChainAsset(lower = false) {
-    return { Eth: lower ? this.ethAddress().toLowerCase() : this.ethAddress() };
+    const returnValue = {};
+    returnValue[this.chain().nameAsPascalCase()] = lower ? this.ethAddress().toLowerCase() : this.ethAddress();
+    return returnValue;
   }
 
   toTokenObject() {
@@ -123,6 +125,10 @@ class Token {
 
   async getAssetInfo(field = undefined) {
     let assetRes = await this.ctx.getApi().query.cash.supportedAssets(this.toChainAsset());
+    if(!assetRes.isSome) {
+      throw new Error(`SupportedAssets field not found ${this.toChainAsset()}`)
+    }
+
     let unwrapped = assetRes.unwrap();
     if (field) {
       if (unwrapped.hasOwnProperty(field)) {
@@ -139,7 +145,8 @@ class Token {
     if (['USD', 'CASH'].includes(this.priceTicker)) {
       return 1.0;
     } else {
-      let price = await this.ctx.getApi().query.oracle.prices(await this.getAssetInfo('ticker'));
+      const ticker = await this.getAssetInfo('ticker');
+      let price = await this.ctx.getApi().query.oracle.prices(ticker);
       if (price.isSome) {
         return descale(price.unwrap(), 6);
       } else {
@@ -159,6 +166,10 @@ class Token {
 
   async totalChainBorrows() {
     return this.toTokenAmount(await this.ctx.getApi().query.cash.totalBorrowAssets(this.toChainAsset()));
+  }
+
+  async getChainBalance(actor) {
+
   }
 }
 
@@ -227,6 +238,7 @@ function tokenInfoMap(ctx) {
       constructor_args: [],
       supply_cap: 1000000,
       liquidity_factor: 0.5,
+      price_ticker: "ZRX",
     },
     dai: {
       chain: 'eth',

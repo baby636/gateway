@@ -11,6 +11,10 @@ pub struct GatewayCmd {
     #[structopt(long = "eth-rpc-url")]
     pub eth_rpc_url: Option<String>,
 
+    /// Set the ETH RPC Url for interfacing with ethereum
+    #[structopt(long = "matic-rpc-url")]
+    pub matic_rpc_url: Option<String>,
+
     /// Set the miner address (only useful for validator)
     #[structopt(long = "miner")]
     pub miner: Option<String>,

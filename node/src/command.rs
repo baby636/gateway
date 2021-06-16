@@ -136,6 +136,7 @@ pub fn run() -> sc_cli::Result<()> {
             runtime_interfaces::initialize_validator_config(
                 cli.gateway.eth_key_id.clone(),
                 cli.gateway.eth_rpc_url.clone(),
+                cli.gateway.matic_rpc_url.clone(), // XXX todo: do we even actually need new keys for matic/polygon? I think eth_key_id should be fine / enough.
                 cli.gateway.miner.clone(),
                 cli.gateway.opf_url.clone(),
             );

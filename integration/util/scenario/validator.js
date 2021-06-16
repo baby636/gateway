@@ -224,6 +224,9 @@ class Validator {
         '--miner', `Eth:${this.ethAccount}`,
         '--opf-url', this.ctx.__opfUrl(),
       ];
+      if (this.version.supports('matic') && this.ctx.matic) {
+        newCliArgs.push('--matic-rpc-url', this.ctx.matic.web3Url);
+      }
     } else {
       env['ETH_RPC_URL'] = ethRpcUrl;
       env['ETH_KEY_ID'] = "my_eth_key_id";

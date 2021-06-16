@@ -47,16 +47,43 @@ class Chain {
     await this.blockInfo.update();
   }
 
-  genesisBlock() {
-    return {
-      Eth: {
-        hash: this.blockInfo.hash,
-        parentHash: this.blockInfo.parentHash,
-        number: this.blockInfo.number,
-        events: []
-      }
-    };
+  nameAsPascalCase() {
+    return this.name.charAt(0).toUpperCase() + this.name.slice(1);
   }
+
+  nameAsUpperCase() {
+    return this.name.toUpperCase();
+  }
+
+  // first 3 chars then a : - for matic - MAT:
+  nameAsStarportHeader() {
+    return this.nameAsUpperCase().substring(0, 3) + ":"
+  }
+
+  genesisBlock() {
+    const block = {};
+    // is there a nicer way to do this..?
+    block[this.nameAsPascalCase()] = {
+      hash: this.blockInfo.hash,
+      parentHash: this.blockInfo.parentHash,
+      number: this.blockInfo.number,
+      events: []
+    };
+    return block;
+  }
+
+  genesisBlockForChainSpec() {
+    const newBlock = {};
+    const block = this.genesisBlock();
+    const name = this.nameAsPascalCase();
+    newBlock[name] = {
+      hash: block[name].hash.slice(2),
+      parent_hash: block[name].parentHash.slice(2),
+      number: block[name].number,
+    }
+    return newBlock;
+  }
+
 
   sendAsync(method, params = []) {
     let id = this.asyncId++;
@@ -233,6 +260,10 @@ class Chains {
       deployment.chain.cashToken = deployment.cashToken;
     });
   }
+
+  genesisBlocksForChainSpec() {
+    return this.all().map(chain => chain.genesisBlockForChainSpec());
+  }
 }
 
 async function buildChain(chainInfo, ctx) {
@@ -272,7 +303,7 @@ async function buildChain(chainInfo, ctx) {
   let version = chainInfo.version ? ctx.versions.mustFind(chainInfo.version) : ctx.versions.current;
 
   let blockInfo = new BlockInfo(web3, chainInfo.block_number, ctx);
-  await blockInfo.update();
+  await blockInfo.update('latest');
 
   return new Chain(chainInfo, web3, web3Url, accounts, blockInfo, ganacheServer, version, ctx);
 }

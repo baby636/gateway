@@ -8,6 +8,7 @@ use std::{str, sync::Mutex};
 pub struct ValidatorConfig {
     pub eth_key_id: String,
     pub eth_rpc_url: String,
+    pub matic_rpc_url: String,
     pub miner: String,
     pub opf_url: String,
 }
@@ -22,6 +23,7 @@ lazy_static! {
 pub fn initialize_validator_config(
     eth_key_id: Option<String>,
     eth_rpc_url: Option<String>,
+    matic_rpc_url: Option<String>,
     miner: Option<String>,
     opf_url: Option<String>,
 ) {
@@ -30,6 +32,7 @@ pub fn initialize_validator_config(
             *data_ref = Some(ValidatorConfig {
                 eth_key_id: eth_key_id.unwrap_or(ETH_KEY_ID_DEFAULT.to_owned()),
                 eth_rpc_url: eth_rpc_url.unwrap_or(ETH_RPC_URL_DEFAULT.to_owned()),
+                matic_rpc_url: matic_rpc_url.unwrap_or(MATIC_RPC_URL_DEFAULT.to_owned()),
                 miner: miner.unwrap_or(MINER_DEFAULT.to_owned()),
                 opf_url: opf_url.unwrap_or(OPF_URL_DEFAULT.to_owned()),
             });
@@ -40,12 +43,14 @@ pub fn initialize_validator_config(
 
 const ETH_KEY_ID_ENV_VAR: &str = "ETH_KEY_ID";
 const ETH_RPC_URL_ENV_VAR: &str = "ETH_RPC_URL";
+const MATIC_RPC_URL_ENV_VAR: &str = "MATIC_RPC_URL";
 const MINER_ENV_VAR: &str = "MINER";
 const OPF_URL_ENV_VAR: &str = "OPF_URL";
 
 const ETH_KEY_ID_DEFAULT: &str = gateway_crypto::ETH_KEY_ID_ENV_VAR_DEV_DEFAULT;
 const MINER_DEFAULT: &str = "Eth:0x0000000000000000000000000000000000000000";
 const ETH_RPC_URL_DEFAULT: &str = "https://ropsten-eth.compound.finance";
+const MATIC_RPC_URL_DEFAULT: &str = "https://ropsten-eth.compound.finance"; // xxx todo:wn fix this before merge
 const OPF_URL_DEFAULT: &str = "https://prices.compound.finance/coinbase";
 
 /// The ValidatorConfigInterface is designed to be modified as needed by the validators. This means
@@ -93,6 +98,25 @@ pub trait ValidatorConfigInterface {
         if let Ok(config) = VALIDATOR_CONFIG.lock() {
             if let Some(inner) = config.as_ref() {
                 return Some(inner.eth_rpc_url.clone());
+            }
+        }
+        // not set
+        return Some(ETH_RPC_URL_DEFAULT.into());
+    }
+
+    /// Get the Ethereum node RPC URL
+    fn get_matic_rpc_url() -> Option<String> {
+        // check env override
+        if let Ok(rpc_url) = std::env::var(MATIC_RPC_URL_ENV_VAR) {
+            if rpc_url.len() > 0 {
+                return Some(rpc_url);
+            }
+        }
+
+        // check config
+        if let Ok(config) = VALIDATOR_CONFIG.lock() {
+            if let Some(inner) = config.as_ref() {
+                return Some(inner.matic_rpc_url.clone());
             }
         }
         // not set
